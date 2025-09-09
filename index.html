@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Customer Feedback Form</title>
+  <style>
+    :root{
+      --bg: #0f172a;
+      --panel: #111827;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --accent: #22c55e;
+      --accent-2: #60a5fa;
+      --danger: #ef4444;
+      --ring: #334155;
+      --star: #fbbf24;
+      --border: #1f2937;
+      --radius: 16px;
+    }
+    *{ box-sizing: border-box }
+    body{
+      margin:0; padding: 32px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 10% -10%, #111827 0%, #0b1220 40%, var(--bg) 100%);
+      color: var(--text);
+    }
+    .wrap{ max-width: 780px; margin: 0 auto; }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: 0 10px 30px rgba(2,6,23,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
+      backdrop-filter: blur(8px);
+    }
+    h1{ font-size: clamp(22px, 2.2vw, 30px); margin: 0 0 8px; }
+    p.sub{ margin:0 0 20px; color: var(--muted) }
+
+    /* form controls */
+    form{ display: grid; gap: 18px; }
+    .field{ display:grid; gap:10px; }
+    label{ font-weight: 600; }
+    .help{ color: var(--muted); font-size: 14px; }
+    input[type="text"], input[type="email"], textarea, select{
+      width:100%; background: #0b1220; color: var(--text);
+      border:1px solid var(--ring); border-radius: 12px; padding: 12px 14px;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus, textarea:focus, select:focus{
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 4px rgba(96,165,250,0.2);
+    }
+    textarea{ min-height: 120px; resize: vertical }
+
+    .row{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 720px){ .row{ grid-template-columns: 1fr } }
+
+    /* chips */
+    .chips{ display:flex; flex-wrap: wrap; gap:10px }
+    .chip{
+      --on: 0;
+      display:inline-flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
+      padding:10px 12px; border-radius: 999px; border:1px solid var(--ring);
+      background: hsl(215 30% 12% / 1);
+      transition: background .2s, border-color .2s, transform .05s;
+    }
+    .chip:active{ transform: translateY(1px) }
+    .chip input{ appearance:none; width:16px; height:16px; border-radius: 50%; border:1.5px solid #64748b; display:inline-block; position:relative }
+    .chip input:checked{ border-color: var(--accent); background: radial-gradient(circle at 50% 50%, var(--accent) 0 50%, transparent 52% 100%) }
+
+    /* star rating (accessible radios) */
+    .stars{ display:inline-flex; gap:8px; align-items:center }
+    .stars .star-group{ display:flex; direction: rtl; gap:6px }
+    .stars input{ position:absolute; opacity:0; }
+    .stars label{
+      font-size: 28px; line-height: 1; cursor: pointer; filter: drop-shadow(0 2px 0 rgba(0,0,0,.25));
+      color: #374151; transition: transform .05s ease-in-out;
+    }
+    .stars label:active{ transform: translateY(1px) scale(0.98) }
+    .stars label::selection{ background: transparent }
+    .stars label[aria-checked="true"], .stars label.active{ color: var(--star) }
+    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+
+    .counter{ display:flex; justify-content:space-between; font-size: 13px; color: var(--muted) }
+
+    .actions{ display:flex; gap:12px; align-items:center; }
+    button{
+      appearance:none; border: none; color:#081017; font-weight: 700; cursor:pointer;
+      background: linear-gradient(180deg, #22c55e, #16a34a);
+      padding: 12px 18px; border-radius: 12px; box-shadow: 0 8px 18px rgba(34,197,94,0.25);
+      transition: transform .05s ease-in-out, filter .2s;
+    }
+    button:hover{ filter: brightness(1.05) }
+    button:active{ transform: translateY(1px) }
+    .ghost{ background: transparent; color: var(--text); border:1px solid var(--ring); box-shadow:none }
+
+    .success{
+      display:none; margin-top:16px; padding:14px 16px; border:1px solid #14532d; background:#052e1a; color:#bbf7d0; border-radius: 12px;
+    }
+    .error{ color: var(--danger) }
+
+    footer{ margin-top: 18px; color: var(--muted); font-size: 12px }
+    a{ color: #93c5fd }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="card" role="form" aria-labelledby="title">
+      <h1 id="title">Quick Feedback</h1>
+      <p class="sub">Rate your experience in a snap and leave an optional comment. It takes ~20 seconds.</p>
+
+      <form id="feedbackForm" novalidate>
+        <!-- Overall rating -->
+        <div class="field" aria-labelledby="ratingLabel">
+          <label id="ratingLabel" for="rating-1">Overall rating</label>
+          <div class="stars" aria-label="Star rating from 1 to 5">
+            <div class="star-group">
+              <!-- Using radios for accessibility; direction:rtl lets hover fill leftwards -->
+              <input type="radio" name="rating" id="rating-5" value="5" required />
+              <label for="rating-5" title="Excellent" aria-checked="false">★</label>
+              <input type="radio" name="rating" id="rating-4" value="4" />
+              <label for="rating-4" title="Good" aria-checked="false">★</label>
+              <input type="radio" name="rating" id="rating-3" value="3" />
+              <label for="rating-3" title="Okay" aria-checked="false">★</label>
+              <input type="radio" name="rating" id="rating-2" value="2" />
+              <label for="rating-2" title="Poor" aria-checked="false">★</label>
+              <input type="radio" name="rating" id="rating-1" value="1" />
+              <label for="rating-1" title="Terrible" aria-checked="false">★</label>
+            </div>
+            <span id="ratingText" class="help" aria-live="polite"></span>
+          </div>
+          <span class="error sr-only" id="ratingError">Please select a rating.</span>
+        </div>
+
+        <!-- Quick tags -->
+        <div class="field">
+          <label>What stood out? <span class="help" id="tagsHelp">Pick any that apply</span></label>
+          <div class="chips" role="group" aria-describedby="tagsHelp">
+            <label class="chip"><input type="checkbox" name="highlights" value="Speed" /> Speed</label>
+            <label class="chip"><input type="checkbox" name="highlights" value="Quality" /> Quality</label>
+            <label class="chip"><input type="checkbox" name="highlights" value="Support" /> Support</label>
+            <label class="chip"><input type="checkbox" name="highlights" value="Ease of Use" /> Ease of Use</label>
+            <label class="chip"><input type="checkbox" name="highlights" value="Price" /> Price</label>
+            <label class="chip"><input type="checkbox" name="highlights" value="Reliability" /> Reliability</label>
+          </div>
+        </div>
+
+        <!-- Comment with counter -->
+        <div class="field">
+          <label for="comments">Comments (optional)</label>
+          <textarea id="comments" name="comments" maxlength="500" placeholder="What did we do well? What could be better?"></textarea>
+          <div class="counter"><span class="help">Max 500 characters</span> <span id="charCount">0 / 500</span></div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="name">Name (optional)</label>
+            <input id="name" name="name" type="text" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="email">Email (optional)</label>
+            <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="order">Order/Ref # (optional)</label>
+          <input id="order" name="order" type="text" inputmode="numeric" placeholder="e.g., 12345" />
+        </div>
+
+        <div class="field">
+          <label for="consent" class="help"><input id="consent" type="checkbox" required /> I agree to the processing of my feedback for service improvement.</label>
+        </div>
+
+        <div class="actions">
+          <button type="submit" aria-label="Submit feedback">Submit</button>
+          <button type="reset" class="ghost">Clear</button>
+        </div>
+
+        <div class="success" id="successMsg" role="status" aria-live="polite">🎉 Thank you! Your feedback was recorded.</div>
+      </form>
+
+      <footer>
+        This is a front‑end only demo. Wire it to your backend by setting the form's <code>action</code> to your endpoint
+        or posting the JSON from the submit handler below.
+      </footer>
+    </div>
+  </main>
+
+  <script>
+    // --- Star rating behavior & a11y state ---
+    const ratingRadios = Array.from(document.querySelectorAll('input[name="rating"]'));
+    const ratingText = document.getElementById('ratingText');
+    const ratingError = document.getElementById('ratingError');
+    const labels = Array.from(document.querySelectorAll('.stars label'));
+
+    const ratingMap = {1:'Terrible',2:'Poor',3:'Okay',4:'Good',5:'Excellent'};
+
+    function updateStars(){
+      const checked = ratingRadios.find(r=>r.checked);
+      labels.forEach(l=> l.setAttribute('aria-checked','false'));
+      if(checked){
+        const val = Number(checked.value);
+        ratingText.textContent = `${val} – ${ratingMap[val]}`;
+        document.querySelector(`label[for="${checked.id}"]`)?.setAttribute('aria-checked','true');
+        ratingError.style.display = 'none';
+      } else {
+        ratingText.textContent = '';
+      }
+    }
+    ratingRadios.forEach(r=> r.addEventListener('change', updateStars));
+    updateStars();
+
+    // --- Chips: allow clicking anywhere on the label ---
+    document.querySelectorAll('.chip').forEach(chip=>{
+      chip.addEventListener('click', (e)=>{
+        const input = chip.querySelector('input');
+        // Let native label click toggle the checkbox; no extra logic needed
+      });
+    });
+
+    // --- Character counter ---
+    const comments = document.getElementById('comments');
+    const counter = document.getElementById('charCount');
+    const max = comments.getAttribute('maxLength');
+    function updateCount(){ counter.textContent = `${comments.value.length} / ${max}`; }
+    comments.addEventListener('input', updateCount); updateCount();
+
+    // --- Submit handler (demo) ---
+    const form = document.getElementById('feedbackForm');
+    const successMsg = document.getElementById('successMsg');
+
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+
+      // HTML5 validity check
+      if(!form.reportValidity()){
+        // If rating required wasn't selected, surface an inline message
+        const rated = ratingRadios.some(r=>r.checked);
+        if(!rated){ ratingError.style.display = 'block'; ratingError.classList.add('error'); }
+        return;
+      }
+
+      const data = Object.fromEntries(new FormData(form).entries());
+      // Convert multi-value checkboxes to array
+      data.highlights = Array.from(new FormData(form).getAll('highlights'));
+      data.timestamp = new Date().toISOString();
+
+      // DEMO: Show success and log JSON. Replace with fetch() to your API.
+      console.log('Feedback payload →', data);
+      successMsg.style.display = 'block';
+
+      // Optionally reset after a delay
+      setTimeout(()=>{ form.reset(); updateStars(); updateCount(); }, 1200);
+    });
+
+    form.addEventListener('reset', ()=>{
+      setTimeout(()=>{ // wait for native reset
+        updateStars(); updateCount(); successMsg.style.display='none';
+      }, 0);
+    });
+  </script>
+</body>
+</html>
